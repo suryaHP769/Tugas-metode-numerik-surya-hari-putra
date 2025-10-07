@@ -1,0 +1,57 @@
+import numpy as np
+# Implementasi metode Broyden (Secant) untuk sistem persamaan non-linear
+# [Nsurya hari putra] - [21120123140135]
+
+def broyden_method(x0, y0, epsilon=0.000001, max_iter=100):
+    def f(xy):
+        x, y = xy
+        return np.array([x**2 + x * y - 10, y + 3 * x * y**2 - 57])
+    
+    xy = np.array([x0, y0])
+    print(f"{'r':<3} {'x':<12} {'y':<12} {'deltaX':<12} {'deltaY':<12}")
+    print(f"{0:<3} {xy[0]:<12.6f} {xy[1]:<12.6f} {0.000000:<12.6f} {0.000000:<12.6f}")
+    
+    # Jacobian awal (dari Newton)
+    x, y = xy
+    J = np.array([[2*x + y, x], [3*y**2, 1 + 6*x*y]])
+    
+    F = f(xy)
+    for r in range(1, max_iter + 1):
+        try:
+            if abs(np.linalg.det(J)) < 1e-10:
+                print("Error: Determinan Jacobian mendekati nol.")
+                break
+            
+            s = np.linalg.solve(-J, F)  # s = -J^{-1} F
+            xy_new = xy + s
+            delta_x, delta_y = abs(s[0]), abs(s[1])
+            
+            print(f"{r:<3} {xy_new[0]:<12.6f} {xy_new[1]:<12.6f} {delta_x:<12.6f} {delta_y:<12.6f}")
+            
+            if delta_x < epsilon and delta_y < epsilon:
+                print("Konvergen.")
+                return xy_new
+            
+            F_new = f(xy_new)
+            y_diff = F_new - F
+            
+            # Broyden update
+            s_dot = np.dot(s, s)
+            if abs(s_dot) < 1e-10:
+                print("Error: Pembagi mendekati nol dalam update Broyden.")
+                break
+            J = J + np.outer(y_diff - J @ s, s) / s_dot
+            
+            xy = xy_new
+            F = F_new
+        except np.linalg.LinAlgError:
+            print("Error: Masalah numerik dalam solver.")
+            break
+    
+    print("Tidak konvergen dalam max_iter.")
+    return xy
+
+# Jalankan
+print("=== Metode Broyden (Secant) ===")
+result = broyden_method(1.5, 3.5)
+print(f"\nSolusi akhir: x = {result[0]:.6f}, y = {result[1]:.6f}\n")
